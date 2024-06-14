@@ -1,93 +1,177 @@
-package methods;
 
-import items.Item;
-import containers.Container;
-import containers.SmallContainer;
-import containers.BigContainer;
+package Methods;
 
-import java.util.List;
+import Items.Item;
+import Exceptions.CustomException;
+
 import java.util.ArrayList;
+import java.util.List;
 
+// class for calculation of shipping details
 public class Calculation {
-    // Method to calculate total volume of items in cubic meters
-    public double totalVolume(List<Item> items) {
-        double totalVolume = 0;
-        for (Item item : items) {
-            totalVolume += item.getVolume() / 1_000_000; // Convert cm³ to m³
-        }
-        return totalVolume;
+    private List<Item> items = new ArrayList<>(); // list to store items
+    private List<Item> order = new ArrayList<>(); // list to store the final order
+    private String bestShipment; // best shipment details
+    private int shippingPrice; // total shipping price
+    private boolean verboseMode; // flag for verbose mode
+
+    // constructor to initialize calculation with verbose mode
+    public Calculation(boolean verboseMode) {
+        this.verboseMode = verboseMode;
     }
 
-    // Method to calculate total weight of items
-    public double totalWeight(List<Item> items) {
+    // method to calculate total weight of all items
+    private double totalWeight() {
         double totalWeight = 0;
-        for (Item item : items) {
-            totalWeight += item.getWeight();
+        for (Item item : this.items) {
+            totalWeight += item.getWeight() * item.getAmount();
         }
         return totalWeight;
     }
 
-    // Method to determine the best shipping method based on volume and weight
-    public String bestShipping(List<Item> items) {
-        double totalVolume = totalVolume(items);
-        double totalWeight = totalWeight(items);
-        double bigContainerVolume = new BigContainer().getVolume();
-        double smallContainerVolume = new SmallContainer().getVolume();
-        double bigContainerCost = new BigContainer().getCost(totalWeight);
-        double smallContainerCost = new SmallContainer().getCost(totalWeight);
-
-        int numBigContainers = (int) Math.ceil(totalVolume / bigContainerVolume);
-        int numSmallContainers = (int) Math.ceil(totalVolume / smallContainerVolume);
-
-        double costWithBigContainers = numBigContainers * bigContainerCost;
-        double costWithSmallContainers = numSmallContainers * smallContainerCost;
-
-        return costWithBigContainers <= costWithSmallContainers ?
-                numBigContainers + " Big Container(s)" : numSmallContainers + " Small Container(s)";
+    // method to calculate total volume of all items
+    private double totalVolume() {
+        double totalVolume = 0;
+        for (Item item : this.items) {
+            totalVolume += item.getVolume() * item.getAmount();
+        }
+        return totalVolume;
     }
 
-    public double shippingPrice(List<Item> items) {
-        double totalVolume = totalVolume(items);
-        double totalWeight = totalWeight(items);
-        double bigContainerVolume = new BigContainer().getVolume();
-        double smallContainerVolume = new SmallContainer().getVolume();
-        double bigContainerCost = new BigContainer().getCost(totalWeight);
-        double smallContainerCost = new SmallContainer().getCost(totalWeight);
+    // method to calculate amount of containers that are needed
+    private int[] calculateContainersAmount() throws CustomException {
+        double totalVolume = totalVolume();
+        double totalWeight = totalWeight();
 
-        int numBigContainers = (int) Math.ceil(totalVolume / bigContainerVolume);
-        int numSmallContainers = (int) Math.ceil(totalVolume / smallContainerVolume);
+        int bigContainerVolume = 259 * 243 * 1201;
+        int smallContainerVolume = 259 * 243 * 606;
 
-        double costWithBigContainers = numBigContainers * bigContainerCost;
-        double costWithSmallContainers = numSmallContainers * smallContainerCost;
+        int numBigContainers = (int) Math.floor(totalVolume / bigContainerVolume);
+        double remainingVolume = totalVolume % bigContainerVolume;
 
-        return Math.min(costWithBigContainers, costWithSmallContainers);
+        int numSmallContainers = (remainingVolume > 0) ? 1 : 0;
+
+        int smallContainerWeightPrice = (totalWeight > 500) ? 1200 : 1000;
+
+        int[] containerAmounts = {numBigContainers, numSmallContainers, smallContainerWeightPrice};
+        return containerAmounts;
     }
 
-    public void addItems(List<Item> items, Item item, int quantity) {
-        for (int i = 0; i < quantity; i++) {
-            items.add(item);
+    // method to calculate total shipping price
+    private void calculateShippingPrice() throws CustomException {
+        int[] containerAmounts = calculateContainersAmount();
+        int bigContainers = containerAmounts[0];
+        int smallContainers = containerAmounts[1];
+        int smallContainerPrice = containerAmounts[2];
+
+        shippingPrice = (bigContainers * 1800) + (smallContainers * smallContainerPrice);
+    }
+
+    // method to get the best shipping option
+    public String bestShipping() throws CustomException {
+        int[] containerAmounts = calculateContainersAmount();
+        int bigContainers = containerAmounts[0];
+        int smallContainers = containerAmounts[1];
+
+        if (bigContainers == 0 && smallContainers == 0) {
+            return "No containers needed";
+        }
+
+        if (smallContainers != 0) {
+            return "Big Containers: " + bigContainers + "\nSmall Containers: " + smallContainers;
+        } else {
+            return "Big Containers: " + bigContainers;
         }
     }
 
-    public List<Item> addOrder(int numLaptops, int numMice, int numDesktops, int numLCDScreens) {
-        List<Item> order = new ArrayList<>();
-        addItems(order, new Item("Laptop", 60, 50, 50, 6.5), numLaptops);
-        addItems(order, new Item("Mouse", 30, 30, 20, 0.2), numMice);
-        addItems(order, new Item("Desktop", 100, 150, 50, 20), numDesktops);
-        addItems(order, new Item("LCD Screen", 120, 140, 80, 2.6), numLCDScreens);
-        return order;
+
+    // method to get total shipping price
+    public int getShippingPrice() throws CustomException {
+        calculateShippingPrice();
+        return shippingPrice;
     }
 
-    public void printItem(List<Item> items) {
-        for (Item item : items) {
+    // method to add items to the calculation
+    public void addItems(List<Item> addItems) throws CustomException {
+        for (Item addItem : addItems) {
+            boolean found = false;
+            for (Item item : this.items) {
+                if (addItem.getName().equals(item.getName()) && addItem.getDimensions().equals(item.getDimensions())) {
+                    item.setAmount(item.getAmount() + addItem.getAmount());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                this.items.add(addItem);
+            }
+        }
+    }
+
+    // method to add the current items to the order and calculate shipment information
+    public void addOrder() throws CustomException {
+        this.order = new ArrayList<>(this.items);
+        this.bestShipment = this.bestShipping();
+        this.shippingPrice = getShippingPrice();
+    }
+
+    // method to print information about all items
+    public void printItemsInfo() {
+        for (Item item : this.items) {
             item.printInfo();
         }
     }
 
-    public void printOrder(List<Item> items) {
-        System.out.println("Total Volume: " + totalVolume(items) + " m³");
-        System.out.println("Total Weight: " + totalWeight(items) + " kg");
-        System.out.println("Best Shipping Option: " + bestShipping(items));
-        System.out.println("Shipping price: " + shippingPrice(items) + " Euros");
+    // method to clear all items
+    public void clearItems() {
+        this.items.clear();
     }
+
+    // method to display the information of the current order
+    public void displayOrder() {
+        if (this.order.isEmpty()) {
+            System.out.println("No order added");
+        } else {
+            // calculate overall volume and weight
+            double totalVolume = 0;
+            double totalWeight = 0;
+            for (Item item : this.order) {
+                totalVolume += item.getVolume() * item.getAmount(); // multiply by the amount to get the total volume
+                totalWeight += item.getWeight() * item.getAmount(); // multiply by the amount to get the total weight
+            }
+
+            // print table header
+            System.out.println("------------------ Order details ------------------");
+            System.out.println("+--------------+--------------+---------------------+---------------+----------+");
+            System.out.println("| Item Number  | Item Name    | Volume (m³)         | Weight        | Amount   |");
+            System.out.println("+--------------+--------------+---------------------+---------------+----------+");
+
+            // print item details in table
+            for (int i = 0; i < this.order.size(); i++) {
+                Item item = this.order.get(i);
+                System.out.printf("| %-12d | %-12s | %-19.3f | %-13.1f | %-8d |\n",
+                        (i + 1),
+                        item.getName(),
+                        (item.getVolume() * item.getAmount()) / 1000000.0, // convert cubic cm to cubic meters for total volume
+                        item.getWeight() * item.getAmount(), // for the total weight
+                        item.getAmount());
+            }
+
+            // table footer
+            System.out.println("+--------------+--------------+---------------------+---------------+----------+");
+
+            // print overall volume and weight
+            System.out.printf("\nOverall Volume: %.3f m³\n", totalVolume / 1000000.0); // convert cm³ to m³
+            System.out.printf("Overall Weight: %.1f kg\n\n", totalWeight); // display total weight
+
+            // print order shipment information
+            System.out.println("------------------ Order Shipment Info ------------------");
+            System.out.println("Best Shipping:");
+            System.out.println(this.bestShipment);
+            System.out.println("Shipping price: " + this.shippingPrice);
+            System.out.println("----------------------------------------------------------");
+        }
+    }
+
+
 }
