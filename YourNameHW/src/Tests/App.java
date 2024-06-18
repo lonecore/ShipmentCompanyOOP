@@ -3,6 +3,7 @@ package Tests;
 
 import Items.Item;
 import Methods.Calculation;
+import Methods.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,38 +22,22 @@ public class App {
         return itemList;
     }
 
-    // method to validate an integer input from the user
-    private static int getValidIntegerInput(Scanner scanner) {
-        while (true) {
-            try {
-                int input = Integer.parseInt(scanner.nextLine());
-                if (input >= 0) {
-                    return input;
-                } else {
-                    System.out.println("Please enter a positive integer.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a valid integer.");
-            }
-        }
-    }
-
     // main method to run the application
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in); // scanner to read user input
-        Calculation calculation = new Calculation(false); // create a calculation instance with verbose mode off
+        Calculation calculation = new Calculation(); // create a calculation instance with verbose mode off
 
         int[] itemQuantities = new int[4]; // array to store the quantities of each item
 
         // prompt the user to input the quantities of each item
         System.out.print("Enter the number of Laptops you want to order: ");
-        itemQuantities[0] = getValidIntegerInput(scanner);
+        itemQuantities[0] = Utils.getValidIntegerInput(scanner); // Use Utils method for input validation
         System.out.print("Enter the number of Mouses you want to order: ");
-        itemQuantities[1] = getValidIntegerInput(scanner);
+        itemQuantities[1] = Utils.getValidIntegerInput(scanner); // Use Utils method for input validation
         System.out.print("Enter the number of Desktops you want to order: ");
-        itemQuantities[2] = getValidIntegerInput(scanner);
+        itemQuantities[2] = Utils.getValidIntegerInput(scanner); // Use Utils method for input validation
         System.out.print("Enter the number of LCD Screens you want to order: ");
-        itemQuantities[3] = getValidIntegerInput(scanner);
+        itemQuantities[3] = Utils.getValidIntegerInput(scanner); // Use Utils method for input validation
 
         // add the items to the calculation and process the order
         calculation.addItems(createOrderList(itemQuantities));

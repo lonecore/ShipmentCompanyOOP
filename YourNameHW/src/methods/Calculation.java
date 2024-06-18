@@ -1,9 +1,9 @@
 
 package Methods;
-
 import Items.Item;
 import Exceptions.CustomException;
-
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,11 +13,26 @@ public class Calculation {
     private List<Item> order = new ArrayList<>(); // list to store the final order
     private String bestShipment; // best shipment details
     private int shippingPrice; // total shipping price
-    private boolean verboseMode; // flag for verbose mode
 
-    // constructor to initialize calculation with verbose mode
-    public Calculation(boolean verboseMode) {
-        this.verboseMode = verboseMode;
+    // method to add items to the order list
+    public void addItems(List<Item> addItems) throws CustomException {
+        // use a map to quickly find items by a unique key composed of name and dimensions
+        Map<String, Item> itemMap = new HashMap<>();
+        for (Item item : this.items) {
+            String key = item.getName() + item.getDimensions();
+            itemMap.put(key, item);
+        }
+
+        for (Item addItem : addItems) {
+            String key = addItem.getName() + addItem.getDimensions();
+            if (itemMap.containsKey(key)) {
+                Item existingItem = itemMap.get(key);
+                existingItem.setAmount(existingItem.getAmount() + addItem.getAmount());
+            } else {
+                this.items.add(addItem);
+                itemMap.put(key, addItem);
+            }
+        }
     }
 
     // method to calculate total weight of all items
@@ -49,13 +64,28 @@ public class Calculation {
         int numBigContainers = (int) Math.floor(totalVolume / bigContainerVolume);
         double remainingVolume = totalVolume % bigContainerVolume;
 
-        int numSmallContainers = (remainingVolume > 0) ? 1 : 0;
+        int numSmallContainers = 0;
+        if (remainingVolume > 0) {
+            if (remainingVolume <= smallContainerVolume) {
+                numSmallContainers = 1;
+            } else {
+                numBigContainers += 1;
+            }
+        }
+
+        // check if using a combination of big and small containers is cheaper
+        if (numBigContainers > 1 && remainingVolume <= smallContainerVolume && totalWeight <= 500) {
+            numBigContainers -= 1;
+            numSmallContainers = 1;
+        }
 
         int smallContainerWeightPrice = (totalWeight > 500) ? 1200 : 1000;
 
         int[] containerAmounts = {numBigContainers, numSmallContainers, smallContainerWeightPrice};
         return containerAmounts;
     }
+
+
 
     // method to calculate total shipping price
     private void calculateShippingPrice() throws CustomException {
@@ -84,47 +114,11 @@ public class Calculation {
         }
     }
 
-
-    // method to get total shipping price
-    public int getShippingPrice() throws CustomException {
-        calculateShippingPrice();
-        return shippingPrice;
-    }
-
-    // method to add items to the calculation
-    public void addItems(List<Item> addItems) throws CustomException {
-        for (Item addItem : addItems) {
-            boolean found = false;
-            for (Item item : this.items) {
-                if (addItem.getName().equals(item.getName()) && addItem.getDimensions().equals(item.getDimensions())) {
-                    item.setAmount(item.getAmount() + addItem.getAmount());
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                this.items.add(addItem);
-            }
-        }
-    }
-
     // method to add the current items to the order and calculate shipment information
     public void addOrder() throws CustomException {
         this.order = new ArrayList<>(this.items);
         this.bestShipment = this.bestShipping();
         this.shippingPrice = getShippingPrice();
-    }
-
-    // method to print information about all items
-    public void printItemsInfo() {
-        for (Item item : this.items) {
-            item.printInfo();
-        }
-    }
-
-    // method to clear all items
-    public void clearItems() {
-        this.items.clear();
     }
 
     // method to display the information of the current order
@@ -171,6 +165,23 @@ public class Calculation {
             System.out.println("Shipping price: " + this.shippingPrice);
             System.out.println("----------------------------------------------------------");
         }
+    }
+    // method to print information about all items
+    public void printItemsInfo() {
+        for (Item item : this.items) {
+            item.printInfo();
+        }
+    }
+
+    // method to clear all items
+    public void clearItems() {
+        this.items.clear();
+    }
+
+    // method to get total shipping price
+    public int getShippingPrice() throws CustomException {
+        calculateShippingPrice();
+        return shippingPrice;
     }
 
 

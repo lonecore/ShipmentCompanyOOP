@@ -1,3 +1,4 @@
+
 package Tests;
 
 import Items.Item;
@@ -11,7 +12,7 @@ public class Tests {
     public static void main(String[] args) {
         try {
             // create a calculation instance
-            Calculation calculation = new Calculation(false);
+            Calculation calculation = new Calculation();
 
             // create test items
             Item laptop = new Item("Laptop", 60, 50, 50, 6.5, 10);
@@ -22,6 +23,8 @@ public class Tests {
             // add items to calculation
             calculation.addItems(List.of(laptop, mouse, desktop, lcdScreen));
 
+            //getting LCD Screen dimensions
+            lcdScreen.getDimensions();
             // test best shipping calculation
             String bestShipping = calculation.bestShipping();
             assert bestShipping != null && !bestShipping.isEmpty() : "Best shipping should not be null or empty";
@@ -37,10 +40,14 @@ public class Tests {
             // clear all items and check if the list is empty
             calculation.clearItems();
 
-           
+            // scaling dimensions of laptop
+            laptop.scaleDimensions(2);
+
+
+
             Container smallContainer = new Container("Small", 1, 1, 1); // test container
             assert smallContainer.getMaxWeight() == 2000 : "Small container max weight should be 2000";
-            
+
             // print success message if everything has passed the test
             System.out.println("Test has been completed.");
             System.out.println("No errors have been thrown.");

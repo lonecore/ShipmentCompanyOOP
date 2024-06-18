@@ -26,7 +26,7 @@ public class Container {
         this.usedVolume = 0;
         this.usedWeight = 0;
 
-        // set maximum weight based on container type
+        // set max weight for each container type to make it more realistic
         if (type.equals("Big")) {
             this.maxWeight = 5000;
         } else if (type.equals("Small")) {
@@ -70,6 +70,7 @@ public class Container {
 
     // method to print information about the container
     public void printInfo() {
-        System.out.println("Container type: " + this.type + "\n Volume: " + this.getUnusedSpace() + " cm^3");
+        System.out.println("Container type: " + this.type +
+                "\n Volume: " + this.getUnusedSpace() + " cubic cm");
     }
 }
